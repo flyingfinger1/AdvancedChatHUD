@@ -28,9 +28,9 @@ public interface IChatHud {
     boolean isOver(double mouseX, double mouseY);
 
     static IChatHud getInstance() {
-        // 26.2: the in-game HUD chat is reached via Minecraft.gui.hud.getChat() (ChatComponent),
+        // 26.2: the in-game HUD chat is reached via Minecraft.gui.getChat() (ChatComponent),
         // which MixinChatHud implements IChatHud on.
-        return (IChatHud) Minecraft.getInstance().gui.hud.getChat();
+        return (IChatHud) Minecraft.getInstance().gui.getChat();
     }
 
     void removeMessage(ChatMessage remove);

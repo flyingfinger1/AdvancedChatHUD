@@ -118,8 +118,8 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             return;
         }
         boolean isFocused = isChatFocused();
-        int ticks = client.gui.hud.getGuiTicks();
-        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
+        int ticks = client.gui.getGuiTicks();
+        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.screen != null) {
             return;
         }
         for (int i = windows.size() - 1; i >= 0; i--) {
@@ -169,7 +169,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     public boolean isChatFocused() {
-        return this.client.gui.screen() instanceof AdvancedChatScreen;
+        return this.client.screen instanceof AdvancedChatScreen;
     }
 
     public ChatWindow getSelected() {
@@ -196,7 +196,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
 
         // 26.2: Minecraft.currentScreen -> gui.screen(); AdvancedTextField has no getText() (it extends
         // EditBox), so read its content via getValue().
-        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.gui.screen() instanceof AdvancedChatScreen screen)) {
+        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.screen instanceof AdvancedChatScreen screen)) {
             return;
         }
         if (window.getTab() instanceof MainChatTab) {

@@ -153,7 +153,7 @@ public class ChatWindow {
             ChatMessage newMessage = message.getMessage().shallowClone(getPaddedWidth());
             if (setTicks) {
                 // 26.2: inGameHud.getTicks() -> gui.hud.getGuiTicks().
-                newMessage.setCreationTick(Minecraft.getInstance().gui.hud.getGuiTicks());
+                newMessage.setCreationTick(Minecraft.getInstance().gui.getGuiTicks());
             }
             this.lines.add(0, newMessage);
             if (scrolledHeight > 0) {
