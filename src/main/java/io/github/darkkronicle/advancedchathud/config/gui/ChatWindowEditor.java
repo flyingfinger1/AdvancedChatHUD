@@ -14,8 +14,9 @@ import io.github.darkkronicle.advancedchatcore.interfaces.IClosable;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import io.github.darkkronicle.advancedchathud.gui.ChatWindow;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,22 +27,22 @@ public class ChatWindowEditor extends GuiConfigsBase implements IClosable {
 
     private final ConfigInteger windowX = new ConfigInteger(
             "advancedchathud.windowconfig.x",
-            HudConfigStorage.General.X.config.getIntegerValue(), 0, MinecraftClient.getInstance().getWindow().getScaledWidth(),
+            HudConfigStorage.General.X.config.getIntegerValue(), 0, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
             "advancedchathud.windowconfig.info.x");
 
     private final ConfigInteger windowY = new ConfigInteger(
             "advancedchathud.windowconfig.y",
-            HudConfigStorage.General.Y.config.getIntegerValue(), 0, MinecraftClient.getInstance().getWindow().getScaledHeight(),
+            HudConfigStorage.General.Y.config.getIntegerValue(), 0, Minecraft.getInstance().getWindow().getGuiScaledHeight(),
             "advancedchathud.windowconfig.info.y");
 
     private final ConfigInteger windowWidth = new ConfigInteger(
             "advancedchathud.windowconfig.width",
-            HudConfigStorage.General.WIDTH.config.getIntegerValue(), 40, MinecraftClient.getInstance().getWindow().getScaledWidth(),
+            HudConfigStorage.General.WIDTH.config.getIntegerValue(), 40, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
             "advancedchathud.windowconfig.info.width");
 
     private final ConfigInteger windowHeight = new ConfigInteger(
             "advancedchathud.windowconfig.height",
-            HudConfigStorage.General.HEIGHT.config.getIntegerValue(), 40, MinecraftClient.getInstance().getWindow().getScaledHeight(),
+            HudConfigStorage.General.HEIGHT.config.getIntegerValue(), 40, Minecraft.getInstance().getWindow().getGuiScaledHeight(),
             "advancedchathud.windowconfig.info.height");
 
     private final ConfigBoolean renderRight = new ConfigBoolean(
@@ -110,9 +111,9 @@ public class ChatWindowEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         save();
-        super.close();
+        super.onClose();
     }
 
     @Override
@@ -127,17 +128,17 @@ public class ChatWindowEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public boolean onKeyTyped(int keyCode, int scanCode, int modifiers) {
+    public boolean onKeyTyped(KeyEvent keyEvent) {
         // Override so that on escape stuff still gets saved
         if (this.activeKeybindButton != null) {
-            this.activeKeybindButton.onKeyPressed(keyCode);
+            this.activeKeybindButton.onKeyPressed(keyEvent.key());
             return true;
         } else {
-            if (this.getListWidget().onKeyTyped(keyCode, scanCode, modifiers)) {
+            if (this.getListWidget().onKeyTyped(keyEvent)) {
                 return true;
             }
 
-            if (keyCode == KeyCodes.KEY_ESCAPE
+            if (keyEvent.key() == KeyCodes.KEY_ESCAPE
                     && this.getParent() != GuiUtils.getCurrentScreen()) {
                 // Make sure to save
                 closeGui(true);

@@ -7,7 +7,6 @@
  */
 package io.github.darkkronicle.advancedchathud.gui;
 
-import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.util.InfoUtils;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.chat.AdvancedChatScreen;
@@ -27,14 +26,18 @@ import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
 import io.github.darkkronicle.advancedchathud.tabs.CustomChatTab;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.platform.InputConstants;
+import fi.dy.masa.malilib.render.GuiContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.Level;
+import org.lwjgl.glfw.GLFW;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -46,10 +49,10 @@ import java.util.List;
 public class HudSection extends AdvancedChatScreenSection {
 
     private static final Identifier ADD_ICON =
-            Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/add_window.png");
+            Identifier.fromNamespaceAndPath(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/add_window.png");
 
     private static final Identifier RESET_ICON =
-            Identifier.of(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/reset_windows.png");
+            Identifier.fromNamespaceAndPath(AdvancedChatHud.MOD_ID, "textures/gui/chatwindow/reset_windows.png");
 
     private ContextMenu menu = null;
 
@@ -77,7 +80,11 @@ public class HudSection extends AdvancedChatScreenSection {
         if (!left) {
             Collections.reverse(tabs);
         }
-        RowList<ButtonBase> rows = left ? getScreen().getLeftSideButtons() : getScreen().getRightSideButtons();
+        // 26.2: AdvancedChatScreen's side-button RowList is now typed RowList<IconButton>, but tabs
+        // are TabButtons (CleanButton, not IconButton). RowList only stores/iterates and the screen
+        // renders/dispatches via CleanButton-level virtuals, so a raw RowList stays runtime-safe.
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        RowList rows = left ? getScreen().getLeftSideButtons() : getScreen().getRightSideButtons();
         rows.createSection("tabs", 0);
         for (AbstractChatTab tab : tabs) {
             rows.add("tabs", TabButton.fromTab(tab, 0, 0));
@@ -92,7 +99,7 @@ public class HudSection extends AdvancedChatScreenSection {
             rows.add("tabs", reset, 0);
         }
 
-        if (getScreen().getChatField().getText().isEmpty()) {
+        if (getScreen().getChatField().getValue().isEmpty()) {
             ChatWindow chatWindow = WindowManager.getInstance().getSelected();
             if (chatWindow == null) {
                 return;
@@ -100,36 +107,36 @@ public class HudSection extends AdvancedChatScreenSection {
             AbstractChatTab tab = chatWindow.getTab();
             if (tab instanceof CustomChatTab custom) {
                 getScreen().getChatField().setText(custom.getStartingMessage());
-                getScreen().getChatField().setCursor(custom.getStartingMessage().length(), false);
+                getScreen().getChatField().moveCursorTo(custom.getStartingMessage().length(), false);
             }
         }
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
         if (menu != null) {
-            menu.render(context, mouseX, mouseY, true);
+            menu.render(GuiContext.fromGuiGraphics(context), mouseX, mouseY, true);
         }
     }
 
     public void createContextMenu(int mouseX, int mouseY) {
-        LinkedHashMap<Text, ContextMenu.ContextConsumer> actions = new LinkedHashMap<>();
+        LinkedHashMap<Component, ContextMenu.ContextConsumer> actions = new LinkedHashMap<>();
         message = WindowManager.getInstance().getMessage(mouseX, mouseY);
         if (message != null) {
             TextBuilder data = new TextBuilder();
             try {
                 data.append(
-                        message.getTime().format(DateTimeFormatter.ofPattern(ConfigStorage.General.TIME_FORMAT.config.getStringValue())), Style.EMPTY.withFormatting(Formatting.AQUA)
+                        message.getTime().format(DateTimeFormatter.ofPattern(ConfigStorage.General.TIME_FORMAT.config.getStringValue())), Style.EMPTY.applyFormat(ChatFormatting.AQUA)
                 );
             } catch (IllegalArgumentException e) {
                 AdvancedChatHud.LOGGER.log(Level.WARN, "Can't format time for context menu!", e);
             }
             if (message.getOwner() != null) {
-                data.append(" - ", Style.EMPTY.withFormatting(Formatting.GRAY));
-                if (message.getOwner().getEntry().getDisplayName() != null) {
-                    data.append(message.getOwner().getEntry().getDisplayName());
+                data.append(" - ", Style.EMPTY.applyFormat(ChatFormatting.GRAY));
+                if (message.getOwner().getEntry().getTabListDisplayName() != null) {
+                    data.append(message.getOwner().getEntry().getTabListDisplayName());
                 } else {
-                    data.append(message.getOwner().getEntry().getProfile().getName());
+                    data.append(message.getOwner().getEntry().getProfile().name());
                 }
             }
             if (!data.build().getString().isBlank())  {
@@ -137,26 +144,26 @@ public class HudSection extends AdvancedChatScreenSection {
                     InfoUtils.printActionbarMessage("advancedchathud.context.nothing");
                 });
             }
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.copy")), (x, y) -> {
-                MinecraftClient.getInstance().keyboard.setClipboard(message.getOriginalText().getString());
+            actions.put(Component.literal(StringUtils.translate("advancedchathud.context.copy")), (x, y) -> {
+                Minecraft.getInstance().keyboardHandler.setClipboard(message.getOriginalText().getString());
                 InfoUtils.printActionbarMessage("advancedchathud.context.copied");
             });
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.delete")), (x, y) -> {
+            actions.put(Component.literal(StringUtils.translate("advancedchathud.context.delete")), (x, y) -> {
                 HudChatMessageHolder.getInstance().removeChatMessage(message);
             });
             if (message.getOwner() != null) {
-                actions.put(Text.literal(StringUtils.translate("advancedchathud.context.messageowner")), (x, y) -> {
-                    getScreen().getChatField().setText("/msg " + message.getOwner().getEntry().getProfile().getName() + " ");
+                actions.put(Component.literal(StringUtils.translate("advancedchathud.context.messageowner")), (x, y) -> {
+                    getScreen().getChatField().setText("/msg " + message.getOwner().getEntry().getProfile().name() + " ");
                 });
             }
         }
         ChatWindow hovered = WindowManager.getInstance().getHovered(mouseX, mouseY);
-        actions.put(Text.literal(StringUtils.translate("advancedchathud.context.removeallwindows")), (x, y) -> WindowManager.getInstance().reset());
-        actions.put(Text.literal(StringUtils.translate("advancedchathud.context.clearallmessages")), (x, y) -> WindowManager.getInstance().clear());
+        actions.put(Component.literal(StringUtils.translate("advancedchathud.context.removeallwindows")), (x, y) -> WindowManager.getInstance().reset());
+        actions.put(Component.literal(StringUtils.translate("advancedchathud.context.clearallmessages")), (x, y) -> WindowManager.getInstance().clear());
         if (hovered != null) {
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.duplicatewindow")), (x, y) -> WindowManager.getInstance().duplicateTab(hovered, x, y));
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.configurewindow")), (x, y) -> WindowManager.getInstance().configureTab(getScreen(), hovered));
-            actions.put(Text.literal(StringUtils.translate("advancedchathud.context.minimalist")), (x, y) -> hovered.toggleMinimalist());
+            actions.put(Component.literal(StringUtils.translate("advancedchathud.context.duplicatewindow")), (x, y) -> WindowManager.getInstance().duplicateTab(hovered, x, y));
+            actions.put(Component.literal(StringUtils.translate("advancedchathud.context.configurewindow")), (x, y) -> WindowManager.getInstance().configureTab(getScreen(), hovered));
+            actions.put(Component.literal(StringUtils.translate("advancedchathud.context.minimalist")), (x, y) -> hovered.toggleMinimalist());
         }
         menu = new ContextMenu(mouseX, mouseY, actions, () -> menu = null);
     }
@@ -167,7 +174,8 @@ public class HudSection extends AdvancedChatScreenSection {
             createContextMenu((int) mouseX, (int) mouseY);
             return true;
         }
-        if (menu != null && menu.onMouseClicked((int) mouseX, (int) mouseY, button)) {
+        if (menu != null && menu.onMouseClicked(
+                new MouseButtonEvent(mouseX, mouseY, new MouseButtonInfo(button, 0)), false)) {
             return true;
         }
         return WindowManager.getInstance().mouseClicked(getScreen(), mouseX, mouseY, button);
@@ -193,7 +201,12 @@ public class HudSection extends AdvancedChatScreenSection {
         if (amount < -1.0D) {
             amount = -1.0D;
         }
-        if (!Screen.hasShiftDown()) {
+        // 26.2: static Screen.hasShiftDown() is gone; query the window directly (mirrors
+        // AdvancedChatScreen.mouseScrolled).
+        com.mojang.blaze3d.platform.Window window = Minecraft.getInstance().getWindow();
+        boolean shift = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
+                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
+        if (!shift) {
             amount *= 7.0D;
         }
 

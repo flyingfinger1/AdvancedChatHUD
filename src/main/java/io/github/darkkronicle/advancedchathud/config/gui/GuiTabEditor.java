@@ -23,8 +23,8 @@ import io.github.darkkronicle.advancedchatcore.gui.buttons.NamedSimpleButton;
 import io.github.darkkronicle.advancedchatcore.interfaces.IClosable;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.config.ChatTab;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,9 +94,9 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         save();
-        super.close();
+        super.onClose();
     }
 
     @Override
@@ -111,7 +111,7 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public void resize(MinecraftClient mc, int width, int height) {
+    public void resize(int width, int height) {
         this.width = width;
         this.height = height;
 
@@ -120,17 +120,17 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public boolean onKeyTyped(int keyCode, int scanCode, int modifiers) {
+    public boolean onKeyTyped(KeyEvent keyEvent) {
         // Override so that on escape stuff still gets saved
         if (this.activeKeybindButton != null) {
-            this.activeKeybindButton.onKeyPressed(keyCode);
+            this.activeKeybindButton.onKeyPressed(keyEvent.key());
             return true;
         } else {
-            if (this.getListWidget().onKeyTyped(keyCode, scanCode, modifiers)) {
+            if (this.getListWidget().onKeyTyped(keyEvent)) {
                 return true;
             }
 
-            if (keyCode == KeyCodes.KEY_ESCAPE
+            if (keyEvent.key() == KeyCodes.KEY_ESCAPE
                     && this.getParent() != GuiUtils.getCurrentScreen()) {
                 // Make sure to save
                 closeGui(true);

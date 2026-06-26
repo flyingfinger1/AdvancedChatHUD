@@ -11,7 +11,8 @@ import fi.dy.masa.malilib.gui.interfaces.ISelectionListener;
 import io.github.darkkronicle.advancedchatcore.gui.WidgetConfigList;
 import io.github.darkkronicle.advancedchathud.config.ChatTab;
 import io.github.darkkronicle.advancedchathud.config.Match;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 
 import java.util.Collection;
 
@@ -47,8 +48,8 @@ public class WidgetListMatches extends WidgetConfigList<Match, WidgetMatchEntry>
     }
 
     @Override
-    public boolean onKeyTyped(int keyCode, int scanCode, int modifiers) {
-        boolean val = super.onKeyTyped(keyCode, scanCode, modifiers);
+    public boolean onKeyTyped(KeyEvent keyEvent) {
+        boolean val = super.onKeyTyped(keyEvent);
         for (WidgetMatchEntry widget : this.listWidgets) {
             widget.save();
         }

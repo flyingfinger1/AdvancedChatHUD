@@ -2,11 +2,28 @@
 
 AdvancedChatHUD is an overhaul of Minecraft chat HUD adding many new features.
 
-Please submit bugs to the [issue tracker](https://github.com/DarkKronicle/AdvancedChatHUD/issues). Join the [Discord](https://discord.gg/WnaE3uZxDA) for more help!
+> **Refurbished fork.** DarkKronicle archived the original project. This fork brings AdvancedChatHUD
+> up to **Minecraft 26.2** and modernises the codebase: the whole mod (and its two mixins) was ported
+> from Yarn to the new Mojang names and the 26.x GUI render-state model. It is a module of the
+> refurbished [AdvancedChatCore](https://github.com/flyingfinger1/AdvancedChatCore).
+
+## Requirements
+
+| | Version |
+| --- | --- |
+| Minecraft | **26.2** |
+| Java | **25** (required by Minecraft 26.x) |
+| Fabric Loader | 0.19.0+ |
 
 ## Dependencies
 
-[AdvancedChatCore](https://github.com/DarkKronicle/AdvancedChatCore) is required to run the mod.
+The following are **required** for this mod to run:
+
+- [AdvancedChatCore](https://github.com/flyingfinger1/AdvancedChatCore) **1.6.1+** (this fork's build)
+- [MaLiLib](https://modrinth.com/mod/malilib) — for 26.x use the sakura-ryoko builds
+- [Fabric API](https://modrinth.com/mod/fabric-api)
+
+[Mod Menu](https://modrinth.com/mod/modmenu) is recommended to open the configuration screen.
 
 ## Features
 
@@ -53,14 +70,29 @@ Many features to completely change the way how to message in Minecraft.
 https://user-images.githubusercontent.com/38167691/139516997-975ba447-6a67-4525-8d6f-2d9c1b58a84d.mp4
 
 
+## Building
+
+The build needs a **JDK 25** toolchain (Minecraft 26.x). AdvancedChatHUD depends on the refurbished
+AdvancedChatCore, which it resolves from your local Maven repository. Publish Core locally first:
+
+```
+# in the AdvancedChatCore clone
+./gradlew publishToMavenLocal      # publishes io.github.darkkronicle:AdvancedChatCore:1.6.1
+
+# then in AdvancedChatHUD
+./gradlew build
+```
+
+To run the mod, install it together with AdvancedChatCore, MaLiLib and Fabric API.
+
 ## Development
 
-To develop, all dependencies should automatically be processed through gradle. To ensure code consistency the hook pre-commit.sh can be used. To install the pre-commit hook run:
+To ensure code consistency the hook `pre-commit.sh` can be used. To install it run:
 
 `ln -s ../../pre-commit.sh .git/hooks/pre-commit`
 
 ## Credits n' more
 
-Code & Mastermind: DarkKronicle
-
-Language & Proofreading: Chronos22
+- Code & Mastermind: DarkKronicle
+- Language & Proofreading: Chronos22
+- 26.2 port & modernisation: community fork

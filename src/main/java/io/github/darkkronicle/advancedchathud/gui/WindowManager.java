@@ -23,12 +23,13 @@ import io.github.darkkronicle.advancedchathud.itf.IChatHud;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
 import io.github.darkkronicle.advancedchathud.tabs.CustomChatTab;
 import io.github.darkkronicle.advancedchathud.tabs.MainChatTab;
+import fi.dy.masa.malilib.render.GuiContext;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Style;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ import java.util.List;
 public class WindowManager implements IRenderer, ResolutionEventHandler {
 
     private static final WindowManager INSTANCE = new WindowManager();
-    private final MinecraftClient client;
+    private final Minecraft client;
     private final List<ChatWindow> windows = new ArrayList<>(8);
     private int dragX = 0;
     private int dragY = 0;
@@ -49,7 +50,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     private WindowManager() {
-        client = MinecraftClient.getInstance();
+        client = Minecraft.getInstance();
     }
 
     public void reset() {
@@ -104,11 +105,21 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         return array;
     }
 
+    // 26.2: MaLiLib's IRenderer.onRenderGameOverlayPost(DrawContext) is now
+    // onExtractGuiOverlayPost(GuiContext, float partialTick, ProfilerFiller) — the HUD overlay is drawn
+    // during render-state extraction. GuiContext extends GuiGraphicsExtractor, so ChatWindow.render draws
+    // through it directly. inGameHud.getTicks() -> gui.hud.getGuiTicks(); currentScreen -> gui.screen().
     @Override
-    public void onRenderGameOverlayPost(DrawContext drawContext) {
+    public void onExtractGuiOverlayPost(GuiContext drawContext, float partialTick, ProfilerFiller profiler) {
+        // Only render the chat windows while actually in a world — without this, pinned
+        // (always-visible) windows would also draw on the title screen / main menu where there is
+        // no chat. (registerInGameGuiRenderer fires there too in 26.x.)
+        if (client.level == null || client.player == null) {
+            return;
+        }
         boolean isFocused = isChatFocused();
-        int ticks = client.inGameHud.getTicks();
-        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.currentScreen != null) {
+        int ticks = client.gui.hud.getGuiTicks();
+        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
             return;
         }
         for (int i = windows.size() - 1; i >= 0; i--) {
@@ -158,7 +169,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     public boolean isChatFocused() {
-        return this.client.currentScreen instanceof AdvancedChatScreen;
+        return this.client.gui.screen() instanceof AdvancedChatScreen;
     }
 
     public ChatWindow getSelected() {
@@ -183,14 +194,16 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         windows.removeIf(w -> w == window);
         windows.add(0, window);
 
-        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.currentScreen instanceof AdvancedChatScreen screen)) {
+        // 26.2: Minecraft.currentScreen -> gui.screen(); AdvancedTextField has no getText() (it extends
+        // EditBox), so read its content via getValue().
+        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.gui.screen() instanceof AdvancedChatScreen screen)) {
             return;
         }
         if (window.getTab() instanceof MainChatTab) {
             for (ChatWindow w : windows) {
                 if (w.getTab() instanceof CustomChatTab tab2) {
-                    if (screen.getChatField().getText().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
-                        screen.getChatField().setText(screen.getChatField().getText().substring(tab2.getStartingMessage().length()));
+                    if (screen.getChatField().getValue().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
+                        screen.getChatField().setText(screen.getChatField().getValue().substring(tab2.getStartingMessage().length()));
                         break;
                     }
                 }
@@ -200,8 +213,8 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
 
             for (ChatWindow w : windows) {
                 if (w.getTab() instanceof CustomChatTab tab2) {
-                    if (screen.getChatField().getText().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
-                        screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getText().substring(tab2.getStartingMessage().length()));
+                    if (screen.getChatField().getValue().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
+                        screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getValue().substring(tab2.getStartingMessage().length()));
 
                         replaced = true;
 
@@ -211,12 +224,15 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             }
 
             if (!replaced) {
-                screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getText());
+                screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getValue());
             }
         }
     }
 
-    public boolean mouseClicked(Screen screen, double mouseX, double mouseY, int button) {
+    // 26.2: the caller (HudSection) always passes an AdvancedChatScreen, and the 26.x click pipeline
+    // (Screen.defaultHandleClickEvent) is protected/static and unreachable from here, so the parameter is
+    // narrowed to AdvancedChatScreen to reach its chat field for command suggestion/insertion.
+    public boolean mouseClicked(AdvancedChatScreen screen, double mouseX, double mouseY, int button) {
         ChatWindow over = null;
         for (ChatWindow w : windows) {
             if (w.isMouseOver(mouseX, mouseY)) {
@@ -245,7 +261,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
                 resize = true;
             }
             Style style = over.getText(mouseX, mouseY);
-            if (style != null && screen.handleTextClick(style)) {
+            if (style != null && handleStyleClick(screen, style)) {
                 return true;
             }
             if (over.onMouseClicked(mouseX, mouseY, button)) {
@@ -253,6 +269,47 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             }
         }
         return true;
+    }
+
+    /**
+     * 26.2 replacement for {@code Screen.handleTextClick(Style)} (removed). Vanilla now dispatches chat
+     * click events through the protected/static {@code Screen.defaultHandleClickEvent}, which is not
+     * reachable from this non-Screen class. We dispatch the standard chat actions on the window text
+     * with public APIs instead.
+     *
+     * <p>INTEGRATION NOTE: this covers OPEN_URL / RUN_COMMAND / SUGGEST_COMMAND / COPY_TO_CLIPBOARD —
+     * the actions reachable from chat text. If full parity with vanilla's confirmation/link-trust flow is
+     * needed, add a {@code public boolean handleChatWindowClick(Style)} to AdvancedChatScreen that calls
+     * {@code defaultHandleClickEvent(...)} and delegate to it here.
+     */
+    private boolean handleStyleClick(AdvancedChatScreen screen, Style style) {
+        ClickEvent clickEvent = style.getClickEvent();
+        if (clickEvent == null) {
+            return false;
+        }
+        if (clickEvent instanceof ClickEvent.OpenUrl openUrl) {
+            net.minecraft.util.Util.getPlatform().openUri(openUrl.uri());
+            return true;
+        }
+        if (clickEvent instanceof ClickEvent.RunCommand runCommand) {
+            String command = runCommand.command();
+            if (command.startsWith("/")) {
+                command = command.substring(1);
+            }
+            if (client.player != null) {
+                client.player.connection.sendCommand(command);
+            }
+            return true;
+        }
+        if (clickEvent instanceof ClickEvent.SuggestCommand suggestCommand) {
+            screen.getChatField().setText(suggestCommand.command());
+            return true;
+        }
+        if (clickEvent instanceof ClickEvent.CopyToClipboard copy) {
+            client.keyboardHandler.setClipboard(copy.value());
+            return true;
+        }
+        return false;
     }
 
     private boolean overVanillaHud(double mouseX, double mouseY) {
@@ -264,8 +321,8 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         if (drag != null && !resize) {
             int x = Math.max((int) mouseX - dragX, 0);
             int y = Math.max((int) mouseY - dragY, drag.getActualHeight());
-            x = Math.min(x, client.getWindow().getScaledWidth() - drag.getConvertedWidth());
-            y = Math.min(y, client.getWindow().getScaledHeight());
+            x = Math.min(x, client.getWindow().getGuiScaledWidth() - drag.getConvertedWidth());
+            y = Math.min(y, client.getWindow().getGuiScaledHeight());
             drag.setPosition(x, y);
             return true;
         } else if (drag != null) {
@@ -363,7 +420,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     public ChatWindow getHovered(int x, int y) {
-        int windowHeight = client.getWindow().getScaledHeight();
+        int windowHeight = client.getWindow().getGuiScaledHeight();
         for (ChatWindow w : windows) {
             int wX = w.getConvertedX();
             int wY = w.getConvertedY();

@@ -1,89 +1,71 @@
 plugins {
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
     id 'maven-publish'
-    id "io.freefair.lombok" version "8.10"
 }
 
-apply from: 'https://raw.githubusercontent.com/Scrupyy/GradleScripts/main/gradle/publish.gradle'
-
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
-
-archivesBaseName = project.archives_base_name
-version = "${project.minecraft_version}-${project.mod_version}"
+version = project.mod_version
 group = project.maven_group
 
-Properties additionalProperties = new Properties()
-if (file("extra.properties").exists()) {
-	additionalProperties.load(file("extra.properties").newReader())
+base {
+    archivesName = project.archives_base_name
 }
 
+def javaVersion = JavaVersion.toVersion(project.javaVersion)
+
 repositories {
+    // Our refurbished AdvancedChatCore, published locally with `publishToMavenLocal`.
+    mavenLocal()
     mavenCentral()
-    maven { url 'https://masa.dy.fi/maven' }
-    maven { url 'https://jitpack.io' }
+    maven { name = 'FabricMC'; url = 'https://maven.fabricmc.net/' }
     maven {
-        url = uri("https://maven.pkg.github.com/Scrupyy/AdvancedChatCore")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-            password = project.findProperty("gpr.key") ?: System.getenv("GPR_KEY")
-        }
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
     }
+    maven { name = 'JitPack'; url = 'https://jitpack.io' }
 }
 
 dependencies {
+    // 26.x ships unobfuscated — no Yarn/Mojang mappings, Loom does not remap.
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    modImplementation("com.github.sakura-ryoko:malilib:1.21.8-${project.malilib_version}")
-    modImplementation "com.scrupy:advancedchatcore:1.21.8-${project.advancedchat_version}"
-    modImplementation 'com.github.DarkKronicle.Konstruct:core:2.0.3-build1'
+
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation "maven.modrinth:malilib:${project.malilib_version}"
+
+    // AdvancedChatCore (our refurbished fork, from mavenLocal)
+    implementation "io.github.darkkronicle:AdvancedChatCore:${project.advancedchat_version}"
+
+    // Konstruct (templating) — bundled by AdvancedChatCore at runtime, needed here at compile time.
+    implementation "com.github.DarkKronicle.Konstruct:core:${project.konstruct_version}"
+
+    compileOnly "org.projectlombok:lombok:${project.lombok_version}"
+    annotationProcessor "org.projectlombok:lombok:${project.lombok_version}"
 }
 
 processResources {
-    inputs.property "version", project.version
+    inputs.property 'version', project.version
 
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.encoding = "UTF-8"
-    it.options.release = 21
+    it.options.encoding = 'UTF-8'
+    it.options.release = Integer.parseInt(project.javaVersion)
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-tasks.register('sourcesJar', Jar) {
-    dependsOn classes
-    archiveClassifier.set('sources')
-    from sourceSets.main.allSource
+java {
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    withSourcesJar()
 }
 
-jar {
-    from "LICENSE.txt"
-}
-
-// configure the maven publication
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // add all the jars that should be included when publishing to maven
-            artifact(remapJar) {
-                builtBy remapJar
-            }
-            artifact(sourcesJar) {
-                builtBy remapSourcesJar
-            }
+            from components.java
         }
-    }
-
-    // select the repositories you want to publish to
-    repositories {
-        // uncomment to publish to the local maven
-        // mavenLocal()
     }
 }

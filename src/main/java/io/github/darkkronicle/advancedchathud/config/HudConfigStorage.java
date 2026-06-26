@@ -20,8 +20,8 @@ import fi.dy.masa.malilib.config.options.ConfigDouble;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.util.FileUtils;
-import fi.dy.masa.malilib.util.JsonUtils;
 import fi.dy.masa.malilib.util.StringUtils;
+import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import io.github.darkkronicle.advancedchatcore.config.ConfigStorage;
 import io.github.darkkronicle.advancedchatcore.config.SaveableConfig;
 import io.github.darkkronicle.advancedchatcore.config.options.ConfigColor;
@@ -32,7 +32,7 @@ import io.github.darkkronicle.advancedchathud.tabs.MainChatTab;
 import lombok.Getter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -417,7 +417,7 @@ public class HudConfigStorage implements IConfigHandler {
 
         Visibility(String configString) {
             this.texture =
-                    Identifier.of(
+                    Identifier.fromNamespaceAndPath(
                             AdvancedChatHud.MOD_ID,
                             "textures/gui/chatwindow/" + configString + ".png");
             this.configString = configString;

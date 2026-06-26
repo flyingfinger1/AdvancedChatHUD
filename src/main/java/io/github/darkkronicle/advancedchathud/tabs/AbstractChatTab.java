@@ -11,7 +11,7 @@ import io.github.darkkronicle.advancedchatcore.util.Color;
 import lombok.Data;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.UUID;
 
@@ -61,5 +61,5 @@ public abstract class AbstractChatTab {
      * @param text Object to search.
      * @return True if it should be added.
      */
-    public abstract boolean shouldAdd(Text text);
+    public abstract boolean shouldAdd(Component text);
 }

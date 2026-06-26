@@ -12,7 +12,7 @@ import io.github.darkkronicle.advancedchathud.HudChatMessage;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 @Environment(EnvType.CLIENT)
 public interface IChatHud {
@@ -28,7 +28,9 @@ public interface IChatHud {
     boolean isOver(double mouseX, double mouseY);
 
     static IChatHud getInstance() {
-        return (IChatHud) MinecraftClient.getInstance().inGameHud.getChatHud();
+        // 26.2: the in-game HUD chat is reached via Minecraft.gui.hud.getChat() (ChatComponent),
+        // which MixinChatHud implements IChatHud on.
+        return (IChatHud) Minecraft.getInstance().gui.hud.getChat();
     }
 
     void removeMessage(ChatMessage remove);

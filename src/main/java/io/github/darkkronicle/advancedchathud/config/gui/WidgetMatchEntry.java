@@ -20,10 +20,10 @@ import io.github.darkkronicle.advancedchatcore.gui.buttons.NamedSimpleButton;
 import io.github.darkkronicle.advancedchatcore.util.FindType;
 import io.github.darkkronicle.advancedchatcore.util.TextUtil;
 import io.github.darkkronicle.advancedchathud.config.Match;
+import fi.dy.masa.malilib.render.GuiContext;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +73,9 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
                 });
 
         pos -= findWidth + 1;
-        GuiTextFieldGeneric nameField = new GuiTextFieldGeneric(pos - nameWidth, y, nameWidth, 20, MinecraftClient.getInstance().textRenderer);
+        GuiTextFieldGeneric nameField = new GuiTextFieldGeneric(pos - nameWidth, y, nameWidth, 20, Minecraft.getInstance().font);
         nameField.setMaxLength(64000);
-        nameField.setText(entry.getPattern());
+        nameField.setValue(entry.getPattern());
         name = new TextFieldWrapper<>(nameField, new SaveListener(this));
         parent.addTextField(name);
         texts = new ArrayList<>();
@@ -96,7 +96,7 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
     }
 
     @Override
-    public void renderEntry(int mouseX, int mouseY, boolean selected, DrawContext drawContext) {}
+    public void renderEntry(GuiContext ctx, int mouseX, int mouseY, boolean selected) {}
 
     @Override
     public String getName() {
@@ -104,7 +104,7 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
     }
 
     public void save() {
-        entry.setPattern(name.getTextField().getText());
+        entry.setPattern(name.textField().getValue());
     }
 
     private static class SaveListener implements ITextFieldListener<GuiTextFieldGeneric> {
@@ -117,7 +117,7 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
 
         @Override
         public boolean onTextChange(GuiTextFieldGeneric textField) {
-            parent.entry.setPattern(textField.getText());
+            parent.entry.setPattern(textField.getValue());
             return false;
         }
     }
