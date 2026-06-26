@@ -27,7 +27,6 @@ import io.github.darkkronicle.advancedchathud.gui.WindowManager;
 import io.github.darkkronicle.advancedchathud.util.FileUtil;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
-import org.apache.logging.log4j.Level;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -149,9 +148,9 @@ public class MainChatTab extends AbstractChatTab {
             try {
                 loadKonstruct(path);
             } catch (IOException e) {
-                AdvancedChatHud.LOGGER.log(Level.ERROR, "Error reading " + path + ".", e);
+                AdvancedChatHud.LOGGER.error("Error reading " + path + ".", e);
             } catch (NodeException e) {
-                AdvancedChatHud.LOGGER.log(Level.ERROR, "Error setting up konstruct script " + path, e);
+                AdvancedChatHud.LOGGER.error("Error setting up konstruct script " + path, e);
             }
         }
     }

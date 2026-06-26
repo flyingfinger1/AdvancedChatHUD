@@ -12,15 +12,15 @@ import io.github.darkkronicle.advancedchathud.tabs.MainChatTab;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Environment(EnvType.CLIENT)
 public class AdvancedChatHud implements ClientModInitializer {
 
     public static final String MOD_ID = "advancedchathud";
     public static MainChatTab MAIN_CHAT_TAB;
-    public static Logger LOGGER = LogManager.getLogger("AdvancedChatHUD");
+    public static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger("AdvancedChatHUD");
 
     @Override
     public void onInitializeClient() {

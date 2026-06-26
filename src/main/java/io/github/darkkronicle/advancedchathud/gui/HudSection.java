@@ -36,7 +36,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
-import org.apache.logging.log4j.Level;
 import org.lwjgl.glfw.GLFW;
 
 import java.time.format.DateTimeFormatter;
@@ -129,7 +128,7 @@ public class HudSection extends AdvancedChatScreenSection {
                         message.getTime().format(DateTimeFormatter.ofPattern(ConfigStorage.General.TIME_FORMAT.config.getStringValue())), Style.EMPTY.applyFormat(ChatFormatting.AQUA)
                 );
             } catch (IllegalArgumentException e) {
-                AdvancedChatHud.LOGGER.log(Level.WARN, "Can't format time for context menu!", e);
+                AdvancedChatHud.LOGGER.warn("Can't format time for context menu!", e);
             }
             if (message.getOwner() != null) {
                 data.append(" - ", Style.EMPTY.applyFormat(ChatFormatting.GRAY));
