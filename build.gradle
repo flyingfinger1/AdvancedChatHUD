@@ -69,3 +69,7 @@ publishing {
         }
     }
 }
+
+jar {
+    from 'LICENSE.txt'
+}
