@@ -28,6 +28,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.malilib.render.GuiContext;
+import fi.dy.masa.malilib.util.input.KeyCodes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -36,7 +37,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -200,11 +200,11 @@ public class HudSection extends AdvancedChatScreenSection {
         if (amount < -1.0D) {
             amount = -1.0D;
         }
-        // 26.2: static Screen.hasShiftDown() is gone; query the window directly (mirrors
-        // AdvancedChatScreen.mouseScrolled).
-        com.mojang.blaze3d.platform.Window window = Minecraft.getInstance().getWindow();
-        boolean shift = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
+        // 26.2: static Screen.hasShiftDown() is gone; query the key state directly (mirrors
+        // AdvancedChatScreen.mouseScrolled). 26.3 dropped GLFW for SDL and isKeyDown no longer
+        // takes a window arg; MaLiLib KeyCodes still abstracts the logical key codes.
+        boolean shift = InputConstants.isKeyDown(KeyCodes.KEY_LEFT_SHIFT)
+                || InputConstants.isKeyDown(KeyCodes.KEY_RIGHT_SHIFT);
         if (!shift) {
             amount *= 7.0D;
         }

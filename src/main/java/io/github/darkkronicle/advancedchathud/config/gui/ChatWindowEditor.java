@@ -7,7 +7,7 @@ import fi.dy.masa.malilib.gui.GuiConfigsBase;
 import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.util.GuiUtils;
-import fi.dy.masa.malilib.util.KeyCodes;
+import fi.dy.masa.malilib.util.input.KeyCodes;
 import io.github.darkkronicle.advancedchatcore.gui.buttons.BackButtonListener;
 import io.github.darkkronicle.advancedchatcore.gui.buttons.Buttons;
 import io.github.darkkronicle.advancedchatcore.interfaces.IClosable;

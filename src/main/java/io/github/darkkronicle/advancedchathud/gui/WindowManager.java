@@ -288,7 +288,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             return false;
         }
         if (clickEvent instanceof ClickEvent.OpenUrl openUrl) {
-            net.minecraft.util.Util.getPlatform().openUri(openUrl.uri());
+            com.mojang.blaze3d.Blaze3D.openUri(openUrl.uri());
             return true;
         }
         if (clickEvent instanceof ClickEvent.RunCommand runCommand) {
