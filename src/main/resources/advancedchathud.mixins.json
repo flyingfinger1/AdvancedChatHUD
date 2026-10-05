@@ -6,6 +6,7 @@
   ],
   "client": [
     "MixinChatHud",
+    "MixinGuiExtractRenderState",
     "MixinMinecraftClient"
   ],
   "injectors": {

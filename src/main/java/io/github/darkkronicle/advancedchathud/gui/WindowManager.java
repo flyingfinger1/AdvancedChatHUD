@@ -117,11 +117,25 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         if (client.level == null || client.player == null) {
             return;
         }
+        // 26.2+: MaLiLib's in-game GUI renderers fire at the TAIL of Gui.extractRenderState, i.e. AFTER
+        // the screen's own render state (and thus after the command-suggestion popup). That drew the
+        // chat windows ON TOP of the suggestions whenever a window overlapped them, making them
+        // unreadable. While the AdvancedChat screen is open, the windows are instead rendered BEFORE the
+        // screen (see MixinGuiExtractRenderState) so suggestions stay on top — skip the tail path here
+        // to avoid drawing them twice.
+        if (client.gui.screen() instanceof AdvancedChatScreen) {
+            return;
+        }
         boolean isFocused = isChatFocused();
-        int ticks = client.gui.hud.getGuiTicks();
         if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
             return;
         }
+        renderWindows(drawContext, isFocused);
+    }
+
+    /** Draw all chat windows into the given context (back-to-front). */
+    public void renderWindows(GuiContext drawContext, boolean isFocused) {
+        int ticks = client.gui.hud.getGuiTicks();
         for (int i = windows.size() - 1; i >= 0; i--) {
             windows.get(i).render(drawContext, ticks, isFocused);
         }
