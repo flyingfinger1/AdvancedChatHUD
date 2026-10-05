@@ -196,6 +196,17 @@ public abstract class MixinChatHud implements IChatHud {
         clearMessages(clearHistory);
     }
 
+    // Mirror vanilla's chat clear (F3+D, disconnect-clear, our "Clear All Messages" button — all funnel
+    // through clearMessages) onto the AdvancedChat HUD windows. Injected at TAIL so it only runs when the
+    // clear actually proceeds: Core's MixinChatHud cancels clearMessages at HEAD when CLEAR_ON_DISCONNECT
+    // is off, and a HEAD cancel skips TAIL. clearWindowLines() only empties the windows' line caches and
+    // never calls clearMessages/IChatHud.clear again, so there is no recursion (unlike the earlier attempt
+    // that routed through WindowManager.clear() and caused a StackOverflow).
+    @Inject(method = "clearMessages", at = @At("TAIL"))
+    private void advancedchathud$clearWindowsOnChatClear(boolean clearHistory, CallbackInfo ci) {
+        WindowManager.getInstance().clearWindowLines();
+    }
+
     @Override
     public boolean isOver(double mouseX, double mouseY) {
         double minX = 4 - (4 * getScale());

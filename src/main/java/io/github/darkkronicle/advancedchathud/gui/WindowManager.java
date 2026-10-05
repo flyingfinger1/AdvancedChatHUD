@@ -403,6 +403,15 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
 
     public void clear() {
         IChatHud.getInstance().clear(false);
+        clearWindowLines();
+    }
+
+    /**
+     * Clears only the displayed lines of every chat window — WITHOUT touching the vanilla chat buffer.
+     * Safe to call from inside a {@code ChatComponent.clearMessages} hook (e.g. the F3+D keybind):
+     * it does not call back into {@code clearMessages}/{@code IChatHud.clear}, so it cannot recurse.
+     */
+    public void clearWindowLines() {
         for (ChatWindow w : windows) {
             w.clearLines();
         }
