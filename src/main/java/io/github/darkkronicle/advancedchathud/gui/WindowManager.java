@@ -117,27 +117,16 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         if (client.level == null || client.player == null) {
             return;
         }
-        // 26.2+: MaLiLib's in-game GUI renderers fire at the TAIL of Gui.extractRenderState, i.e. AFTER
-        // the screen's own render state (and thus after the command-suggestion popup). That drew the
-        // chat windows ON TOP of the suggestions whenever a window overlapped them, making them
-        // unreadable. While the AdvancedChat screen is open, the windows are instead rendered BEFORE the
-        // screen (see MixinGuiExtractRenderState) so suggestions stay on top — skip the tail path here
-        // to avoid drawing them twice.
-        if (client.gui.screen() instanceof AdvancedChatScreen) {
+        // This MaLiLib hook fires at the TAIL of Gui.extractRenderState, AFTER the current screen —
+        // drawing here would put the windows sharp on top of the open screen (over the command
+        // suggestions, over the blurred pause/options/config background, etc.). So when a screen is
+        // open the windows are instead rendered BEFORE it (see MixinGuiExtractRenderState), which makes
+        // them blur/sit behind the screen exactly like the vanilla HUD. The tail path only handles the
+        // plain in-game HUD (no screen open).
+        if (client.gui.screen() != null) {
             return;
         }
-        // Never draw the chat windows over AdvancedChat's own config / editor GUIs (MaLiLib GuiBase
-        // screens: the suite config, the window/tab editors, the sharing screen). In 26.2+ the tail
-        // render sits ON TOP of the open screen, so with RENDER_IN_OTHER_GUI ("always on top") enabled
-        // the windows would otherwise cover the config page and make it unusable.
-        if (client.gui.screen() instanceof GuiBase) {
-            return;
-        }
-        boolean isFocused = isChatFocused();
-        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
-            return;
-        }
-        renderWindows(drawContext, isFocused);
+        renderWindows(drawContext, isChatFocused());
     }
 
     /** Draw all chat windows into the given context (back-to-front). */
