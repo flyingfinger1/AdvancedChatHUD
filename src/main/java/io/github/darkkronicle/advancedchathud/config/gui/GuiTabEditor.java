@@ -7,6 +7,7 @@
  */
 package io.github.darkkronicle.advancedchathud.config.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -14,7 +15,6 @@ import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.util.GuiUtils;
-import fi.dy.masa.malilib.util.input.KeyCodes;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.config.SaveableConfig;
 import io.github.darkkronicle.advancedchatcore.gui.buttons.BackButtonListener;
@@ -123,14 +123,14 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     public boolean onKeyTyped(KeyEvent keyEvent) {
         // Override so that on escape stuff still gets saved
         if (this.activeKeybindButton != null) {
-            this.activeKeybindButton.onKeyPressed(keyEvent.key());
+            this.activeKeybindButton.onKeyPressed(keyEvent.input());
             return true;
         } else {
             if (this.getListWidget().onKeyTyped(keyEvent)) {
                 return true;
             }
 
-            if (keyEvent.key() == KeyCodes.KEY_ESCAPE
+            if (keyEvent.input() == InputConstants.KEY_ESCAPE
                     && this.getParent() != GuiUtils.getCurrentScreen()) {
                 // Make sure to save
                 closeGui(true);

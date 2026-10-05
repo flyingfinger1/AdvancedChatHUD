@@ -28,7 +28,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.malilib.render.GuiContext;
-import fi.dy.masa.malilib.util.input.KeyCodes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -169,7 +168,7 @@ public class HudSection extends AdvancedChatScreenSection {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 1) {
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
             createContextMenu((int) mouseX, (int) mouseY);
             return true;
         }
@@ -203,8 +202,8 @@ public class HudSection extends AdvancedChatScreenSection {
         // 26.2: static Screen.hasShiftDown() is gone; query the key state directly (mirrors
         // AdvancedChatScreen.mouseScrolled). 26.3 dropped GLFW for SDL and isKeyDown no longer
         // takes a window arg; MaLiLib KeyCodes still abstracts the logical key codes.
-        boolean shift = InputConstants.isKeyDown(KeyCodes.KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(KeyCodes.KEY_RIGHT_SHIFT);
+        boolean shift = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         if (!shift) {
             amount *= 7.0D;
         }

@@ -7,6 +7,7 @@
  */
 package io.github.darkkronicle.advancedchathud.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import fi.dy.masa.malilib.gui.GuiBase;
@@ -247,7 +248,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             }
             return false;
         }
-        if (button == 0) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             setSelected(over);
             if (over.isMouseOverDragBar(mouseX, mouseY)) {
                 drag = over;
