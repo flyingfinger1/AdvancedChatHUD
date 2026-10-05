@@ -127,6 +127,13 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         if (client.gui.screen() instanceof AdvancedChatScreen) {
             return;
         }
+        // Never draw the chat windows over AdvancedChat's own config / editor GUIs (MaLiLib GuiBase
+        // screens: the suite config, the window/tab editors, the sharing screen). In 26.2+ the tail
+        // render sits ON TOP of the open screen, so with RENDER_IN_OTHER_GUI ("always on top") enabled
+        // the windows would otherwise cover the config page and make it unusable.
+        if (client.gui.screen() instanceof GuiBase) {
+            return;
+        }
         boolean isFocused = isChatFocused();
         if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
             return;
