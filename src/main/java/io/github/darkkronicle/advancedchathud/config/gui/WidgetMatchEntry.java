@@ -13,6 +13,7 @@ import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.ConfigButtonOptionList;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.gui.interfaces.ITextFieldListener;
+import fi.dy.masa.malilib.gui.wrappers.TextFieldType;
 import fi.dy.masa.malilib.gui.wrappers.TextFieldWrapper;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.gui.WidgetConfigListEntry;
@@ -73,10 +74,20 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
                 });
 
         pos -= findWidth + 1;
+        // MaLiLib's TextFieldWrapper uses the TextFieldType enum as shared, mutable state: its
+        // constructor ratchets the type's max length DOWN to the smallest field ever wrapped with it,
+        // and validates the value against it ("Invalid Length [> N]"). A short field elsewhere had
+        // dragged the shared STRING type down to 12, so long match patterns got truncated and flagged
+        // invalid. The 12 is unintended corruption, not a value anything relies on (fields that need a
+        // short limit set their own), so restore STRING to MaLiLib's own default (256). We create the
+        // field (default length 256) and wrap it while both are 256 — so no clamp or down-mutation
+        // happens — then raise the field's own limit so long patterns are never truncated. (The 256
+        // validation only warns, never cuts, and match patterns are far shorter than that anyway.)
+        TextFieldType.STRING.setMaxLength(256);
         GuiTextFieldGeneric nameField = new GuiTextFieldGeneric(pos - nameWidth, y, nameWidth, 20, Minecraft.getInstance().font);
+        name = new TextFieldWrapper<>(nameField, new SaveListener(this), TextFieldType.STRING);
         nameField.setMaxLength(64000);
         nameField.setValue(entry.getPattern());
-        name = new TextFieldWrapper<>(nameField, new SaveListener(this));
         parent.addTextField(name);
         texts = new ArrayList<>();
         texts.add(name);
