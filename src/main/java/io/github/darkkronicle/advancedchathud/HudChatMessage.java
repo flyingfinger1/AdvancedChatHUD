@@ -28,10 +28,31 @@ public class HudChatMessage {
     public HudChatMessage(ChatMessage message) {
         this(message, new ArrayList<>());
 
+        this.tabs = computeTabs(message.getOriginalText());
+        for (AbstractChatTab tab : tabs) {
+            tab.addNewUnread();
+        }
+    }
+
+    public HudChatMessage(ChatMessage message, List<AbstractChatTab> tabs) {
+        this.message = message;
+        this.tabs = tabs;
+    }
+
+    /**
+     * Works out which tabs a message belongs to, honouring each matching custom tab's {@code forward}
+     * flag: the main chat tab is only included when no matching custom tab is set to not forward. This
+     * is the single source of truth for message→tab routing, used both when a message first arrives and
+     * when tabs are rebuilt (e.g. after a config reload or a server switch); keeping them in sync stops
+     * non-forwarded messages (e.g. private messages in their own window) from leaking back into the main
+     * chat on a rebuild.
+     */
+    public static List<AbstractChatTab> computeTabs(net.minecraft.network.chat.Component text) {
+        List<AbstractChatTab> tabs = new ArrayList<>();
         boolean forward = true;
         if (AdvancedChatHud.MAIN_CHAT_TAB.getCustomChatTabs().size() > 0) {
             for (CustomChatTab tab : AdvancedChatHud.MAIN_CHAT_TAB.getCustomChatTabs()) {
-                if (!tab.shouldAdd(message.getOriginalText())) {
+                if (!tab.shouldAdd(text)) {
                     continue;
                 }
                 if (tabs.contains(tab)) {
@@ -47,13 +68,6 @@ public class HudChatMessage {
         if (forward) {
             tabs.add(AdvancedChatHud.MAIN_CHAT_TAB);
         }
-        for (AbstractChatTab tab : tabs) {
-            tab.addNewUnread();
-        }
-    }
-
-    public HudChatMessage(ChatMessage message, List<AbstractChatTab> tabs) {
-        this.message = message;
-        this.tabs = tabs;
+        return tabs;
     }
 }
