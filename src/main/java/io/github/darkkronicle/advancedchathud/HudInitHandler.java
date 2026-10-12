@@ -13,6 +13,7 @@ import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import io.github.darkkronicle.advancedchatcore.AdvancedChatCore;
 import io.github.darkkronicle.advancedchatcore.chat.ChatHistory;
 import io.github.darkkronicle.advancedchatcore.chat.ChatScreenSectionHolder;
+import io.github.darkkronicle.advancedchatcore.config.ConfigLang;
 import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import io.github.darkkronicle.advancedchathud.config.gui.GuiTabManager;
@@ -44,6 +45,16 @@ public class HudInitHandler implements IInitializationHandler {
                         )
                 )
         );
+        // Keep the config option names/tooltips in the current language (see Core's ConfigLang). HUD is
+        // loaded early enough that its frozen names can be stuck in the start-up language. Wrapped so an
+        // older AdvancedChatCore without ConfigLang degrades gracefully instead of crashing.
+        try {
+            ConfigLang.registerRetranslator(() ->
+                    ConfigLang.retranslate(HudConfigStorage.General.OPTIONS, "advancedchathud.config.general."));
+        } catch (Throwable ignored) {
+            // AdvancedChatCore predates ConfigLang; config labels just won't be re-translated.
+        }
+
         IChatHud.getInstance().setTab(AdvancedChatHud.MAIN_CHAT_TAB = new MainChatTab());
 
         // Register on the clear
