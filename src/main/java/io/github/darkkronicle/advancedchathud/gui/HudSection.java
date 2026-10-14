@@ -32,6 +32,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
@@ -114,7 +115,29 @@ public class HudSection extends AdvancedChatScreenSection {
     @Override
     public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
         if (menu != null) {
+            // A context menu is open on top of the chat; don't also show a text hover tooltip underneath it.
             menu.render(GuiContext.fromGuiGraphics(context), mouseX, mouseY, true);
+            return;
+        }
+        // Hover tooltips for text inside the AdvancedChat HUD windows (a name's "click to copy" hint, a
+        // link's URL, ...). Vanilla's chat.extractRenderState draws hover tooltips only for the vanilla
+        // chat component, but the HUD replaces that with its own windows (see MixinChatHud), and the 26.x
+        // refurbish dropped the old getTextStyleAt passthrough — so clicks kept working (via
+        // WindowManager.mouseClicked) while hover tooltips silently stopped. Resolve the style under the
+        // cursor from the windows and queue its hover tooltip. This runs inside AdvancedChatScreen's
+        // extractRenderState, whose extractRenderStateWithTooltipAndSubtitles wrapper draws the queued
+        // tooltip on top at the end of the frame.
+        Style style = WindowManager.getInstance().getText(mouseX, mouseY);
+        if (style != null) {
+            HoverEvent hover = style.getHoverEvent();
+            if (hover instanceof HoverEvent.ShowText showText) {
+                context.setTooltipForNextFrame(Minecraft.getInstance().font, showText.value(), mouseX, mouseY);
+            } else if (hover instanceof HoverEvent.ShowEntity showEntity) {
+                context.setComponentTooltipForNextFrame(
+                        Minecraft.getInstance().font, showEntity.entity().getTooltipLines(), mouseX, mouseY);
+            }
+            // ShowItem (an item tooltip embedded in chat) is rare in chat text and resolving the item
+            // stack's full tooltip here would need registry access, so it is intentionally left out.
         }
     }
 

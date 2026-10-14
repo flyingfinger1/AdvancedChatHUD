@@ -25,13 +25,19 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ActiveTextCollector;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.TextAlignment;
+import net.minecraft.client.renderer.state.gui.GuiTextRenderState;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Util;
+import org.joml.Matrix3x2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -700,11 +706,33 @@ public class ChatWindow {
      * We feed the single line at origin (0,0) and place the cursor at {@code (x, lineHeight/2)} so the
      * finder's vertical hit-test (top..top+lineHeight) matches.
      */
+    /**
+     * Resolve the {@link Style} of the chat text at pixel offset {@code x} within a rendered line.
+     *
+     * <p>26.x replaced {@code TextRenderer.getTextHandler().getStyleAt(Text, int)} with the
+     * {@link ActiveTextCollector} model. MaLiLib/the mod originally ported this through
+     * {@link ActiveTextCollector.ClickableStyleFinder}, but that finder's scanner only keeps a style when
+     * it has a {@code ClickEvent} (or an insertion) — a hover-only style (e.g. a server status line, or a
+     * name whose hover text has no accompanying click) is discarded, so its tooltip never showed. We
+     * instead reproduce what {@code ClickableStyleFinder.accept(0, 0, line)} builds — a single-line
+     * {@link GuiTextRenderState} laid out at the origin — and feed it to
+     * {@link ActiveTextCollector#findElementUnderCursor} with our own scanner that keeps any interactable
+     * style (click OR hover OR insertion). The cursor is placed at {@code (x, lineHeight/2)} so the
+     * finder's vertical hit-test (top..top+lineHeight) matches.
+     */
     private Style styleAtWidth(Component line, int x) {
-        ActiveTextCollector.ClickableStyleFinder finder =
-                new ActiveTextCollector.ClickableStyleFinder(client.font, x, client.font.lineHeight / 2);
-        finder.accept(0, 0, line);
-        return finder.result();
+        FormattedCharSequence seq = line.getVisualOrderText();
+        Font font = client.font;
+        int left = TextAlignment.LEFT.calculateLeft(0, font, seq);
+        GuiTextRenderState state = new GuiTextRenderState(
+                font, seq, new Matrix3x2f(), left, 0, ARGB.white(1.0f), 0, true, true, null);
+        Style[] found = {null};
+        ActiveTextCollector.findElementUnderCursor(state, x, font.lineHeight / 2f, s -> {
+            if (s != null && (s.getClickEvent() != null || s.getHoverEvent() != null || s.getInsertion() != null)) {
+                found[0] = s;
+            }
+        });
+        return found[0];
     }
 
     public Style getText(double mouseX, double mouseY) {
