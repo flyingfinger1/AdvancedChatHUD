@@ -29,6 +29,7 @@ import net.fabricmc.api.Environment;
 import com.mojang.blaze3d.platform.InputConstants;
 import fi.dy.masa.malilib.render.GuiContext;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
@@ -130,7 +131,14 @@ public class HudSection extends AdvancedChatScreenSection {
         if (style != null) {
             HoverEvent hover = style.getHoverEvent();
             if (hover instanceof HoverEvent.ShowText showText) {
-                context.setTooltipForNextFrame(Minecraft.getInstance().font, showText.value(), mouseX, mouseY);
+                // Split the hover text on hard line breaks (\n) ourselves. The Component overload of
+                // setTooltipForNextFrame just wraps the whole component in List.of(getVisualOrderText())
+                // — one line — so an embedded \n (e.g. a MiniMessage <newline>) would render as the
+                // missing-glyph box instead of a line break. Font.split honours \n (and the screen width)
+                // and the ordered-text list overload draws one line per entry.
+                Font font = Minecraft.getInstance().font;
+                int maxWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+                context.setTooltipForNextFrame(font, font.split(showText.value(), maxWidth), mouseX, mouseY);
             } else if (hover instanceof HoverEvent.ShowEntity showEntity) {
                 context.setComponentTooltipForNextFrame(
                         Minecraft.getInstance().font, showEntity.entity().getTooltipLines(), mouseX, mouseY);
