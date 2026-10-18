@@ -52,9 +52,30 @@ public class MatchesEditor extends CoreGuiListBase<Match, WidgetMatchEntry, Widg
 
     @Override
     protected void closeGui(boolean showParent) {
-        getListWidget().save();
-        AdvancedChatHud.MAIN_CHAT_TAB.setUpTabs();
+        persist();
         super.closeGui(showParent);
+    }
+
+    /**
+     * Also persist when the screen is closed through any path other than the Back button — e.g. Escape,
+     * which does not route through {@link #closeGui} on this list GUI (unlike GuiTabEditor, which handles
+     * Escape itself). Without this, matches edited and then dismissed with Escape could be left only in
+     * memory and lost on the next MaLiLib config reload.
+     */
+    @Override
+    public void onClose() {
+        persist();
+        super.onClose();
+    }
+
+    private void persist() {
+        if (getListWidget() != null) {
+            getListWidget().save();
+        }
+        AdvancedChatHud.MAIN_CHAT_TAB.setUpTabs();
+        // Write the edited matches to disk immediately; see GuiTabEditor.save() for why we don't rely on
+        // MaLiLib's deferred config save (intermittent loss of matches when re-opening the menu).
+        io.github.darkkronicle.advancedchathud.config.HudConfigStorage.saveFromFile();
     }
 
     @Override

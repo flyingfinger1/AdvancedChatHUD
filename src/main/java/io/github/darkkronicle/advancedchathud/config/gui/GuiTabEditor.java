@@ -108,6 +108,11 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
 
     public void save() {
         AdvancedChatHud.MAIN_CHAT_TAB.setUpTabs();
+        // Persist to disk right away instead of relying on MaLiLib's ConfigManager to call save() at
+        // some later point (on config-screen close). That timing is not guaranteed — and load() clears
+        // and reloads TABS from the file — so tab/match edits that were only in memory could silently
+        // vanish when re-opening the menu (reported intermittently, launcher-dependent).
+        io.github.darkkronicle.advancedchathud.config.HudConfigStorage.saveFromFile();
     }
 
     @Override
