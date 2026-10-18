@@ -14,6 +14,7 @@ import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.gui.Message;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
+import fi.dy.masa.malilib.gui.wrappers.TextFieldType;
 import fi.dy.masa.malilib.util.StringUtils;
 import io.github.darkkronicle.advancedchatcore.gui.buttons.NamedSimpleButton;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
@@ -46,6 +47,13 @@ public class SharingScreen extends GuiBase {
         int y = 50;
         text = new GuiTextFieldGeneric(x, y, 300, 20, font);
         y -= 24;
+        // MaLiLib's addTextField(field, listener) wraps the field with the shared, mutable
+        // TextFieldType.STRING, whose maxLength the wrapper ratchets DOWN to the smallest field ever
+        // wrapped with it (e.g. a 12-char field elsewhere) and then clamps THIS field to. That truncated
+        // the exported tab JSON (often hundreds of chars) to 12 while the cursor stayed past the end, so
+        // EditBox.updateTextPosition threw StringIndexOutOfBoundsException and crashed the client on
+        // export/import. Restore STRING to this field's capacity before wrapping so the text is never cut.
+        TextFieldType.STRING.setMaxLength(12800);
         text.setMaxLength(12800);
         if (starting != null) {
             text.setValue(starting);
