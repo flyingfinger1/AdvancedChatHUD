@@ -138,6 +138,16 @@ public class ChatWindow {
     public void setRelativeDimensions(double width, double height) {
         this.widthPercent = width;
         this.heightPercent = height;
+        // Re-wrap existing lines to the new width. On load (and when duplicating a tab) the window is
+        // constructed — and its messages wrapped — at the default width BEFORE the saved/target width is
+        // applied here. Without this re-wrap the lines stay wrapped at the narrow default width after a
+        // server/world switch (messages break early, leaving empty space on the right) until the next
+        // manual resize happens to re-wrap them.
+        if (lines != null) {
+            for (ChatMessage m : lines) {
+                m.formatChildren(getPaddedWidth());
+            }
+        }
     }
 
     public void setTab(AbstractChatTab tab) {
