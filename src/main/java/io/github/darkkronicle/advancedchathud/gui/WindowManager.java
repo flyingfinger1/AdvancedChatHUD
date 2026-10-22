@@ -288,7 +288,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
      * reachable from this non-Screen class. We dispatch the standard chat actions on the window text
      * with public APIs instead.
      *
-     * <p>INTEGRATION NOTE: this covers OPEN_URL / RUN_COMMAND / SUGGEST_COMMAND / COPY_TO_CLIPBOARD —
+     * <p>INTEGRATION NOTE: this covers OPEN_URL / OPEN_FILE / RUN_COMMAND / SUGGEST_COMMAND / COPY_TO_CLIPBOARD —
      * the actions reachable from chat text. If full parity with vanilla's confirmation/link-trust flow is
      * needed, add a {@code public boolean handleChatWindowClick(Style)} to AdvancedChatScreen that calls
      * {@code defaultHandleClickEvent(...)} and delegate to it here.
@@ -300,6 +300,12 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         }
         if (clickEvent instanceof ClickEvent.OpenUrl openUrl) {
             com.mojang.blaze3d.Blaze3D.openUri(openUrl.uri());
+            return true;
+        }
+        if (clickEvent instanceof ClickEvent.OpenFile openFile) {
+            // Screenshot messages ("Screenshot saved as ...") and similar use OPEN_FILE; mirror
+            // vanilla Screen.defaultHandleClickEvent which opens the file via Blaze3D.openPath.
+            com.mojang.blaze3d.Blaze3D.openPath(openFile.file().toPath());
             return true;
         }
         if (clickEvent instanceof ClickEvent.RunCommand runCommand) {
